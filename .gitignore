@@ -1,0 +1,24 @@
+#secrets
+.env
+.env.*
+!.env.example
+
+#virtual environments
+.venv/
+
+#python files made automatically 
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+
+#local data and reports
+data/
+reports/
+
+#editor and mac files
+*.swp
+.DS_Store
+.idea/
+.vscode/
+
