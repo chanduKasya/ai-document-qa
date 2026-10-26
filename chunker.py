@@ -44,7 +44,7 @@ def main() -> None:
     print(chunks[1] if len(chunks) > 1 else "Only one chunk was created.")
 
     output_text = "\n\n".join(
-        f"==== CHUNK {i} | {len(chunk.split())} words ====\n{chunk}"
+        f"===== CHUNK {i} | {len(chunk.split())} words =====\n{chunk}"
         for i, chunk in enumerate(chunks, start=1)
 
     )
