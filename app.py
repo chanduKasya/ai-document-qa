@@ -1,20 +1,36 @@
-from pathlib import Path
-import sys
-import os
+import streamlit as st
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-ENV_FILE = PROJECT_ROOT / ".env"
+from answer_question import build_index, retrieve_chunks, build_context, generate_answer
+from search_document import load_chunks, CHUNKS_PATH
 
-print("project setup check")
-print("-------------------")
-print(f"python version: {sys.version.split()[0]}")
-print(f"project root: {PROJECT_ROOT}")
-print(f"env file: {ENV_FILE.exists()}")
 
-if not ENV_FILE.exists():
-    raise FileNotFoundError(
-        "Missing .env file. Create it in the project root."
-        )
-   
+st.set_page_config(page_title = "Document Q&A")
+st.title("Document Q&A")
+st.write("Ask a question about the PDF used in this project.")
 
-print("Milestone 1 setup check passed.")
+
+@st.cache_resource
+def load_search_tools():
+    chunks = load_chunks(CHUNKS_PATH)
+    model, index = build_index(chunks)
+    return chunks, model, index
+
+chunks , model, index = load_search_tools()
+
+question = st.chat_input("Your question")
+
+if question:
+    results = retrieve_chunks(question, chunks, model, index)
+    try:
+        answer = generate_answer(question, build_context(results))
+        st.subheader("Answer")
+        st.write(answer)
+
+        with st.expander("View the source chunks"):
+            for result in results:
+                label = "Source chunk " + str(result["chunk_number"])
+                label = label + " (score: " + str(round(result["score"], 3)) + ")"
+                st.write(label)
+                st.text(result["text"])
+    except Exception as error:
+        st.error("Something went wrong: " + str(error))
