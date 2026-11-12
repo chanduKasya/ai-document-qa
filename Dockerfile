@@ -28,5 +28,9 @@ COPY --chown=user static ./static
 
 EXPOSE 7860
 
+# Lets Docker report whether the app is up ("healthy" in `docker ps`).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.getenv('PORT', '7860') + '/api/health')"
+
 # One worker only: uploaded documents live in this process's memory.
 CMD ["sh", "-c", "uvicorn docqa.main:app --host 0.0.0.0 --port ${PORT:-7860}"]

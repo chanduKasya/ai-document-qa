@@ -11,11 +11,22 @@ short_description: Ask a PDF questions. Answers cite their pages.
 
 # Document Q&A
 
+[![Tests](https://github.com/chanduKasya/ai-document-qa/actions/workflows/tests.yml/badge.svg)](https://github.com/chanduKasya/ai-document-qa/actions/workflows/tests.yml)
+[![Docker image](https://github.com/chanduKasya/ai-document-qa/actions/workflows/docker.yml/badge.svg)](https://github.com/chanduKasya/ai-document-qa/actions/workflows/docker.yml)
+
 Upload a PDF and ask it questions in plain language. Every answer cites the pages it came from, and clicking a citation highlights the exact passage, so you can check the answer instead of trusting it.
 
 Built with retrieval-augmented generation (RAG): the app finds the passages that match your question, then asks a large language model to answer **using only those passages**. When the document doesn't contain the answer, it says so.
 
 **Live demo:** _add your Hugging Face Space link here after deploying_
+
+**Run it yourself in one command** (needs [Docker](https://www.docker.com/products/docker-desktop/) and a free [Groq API key](https://console.groq.com/keys)):
+
+```bash
+docker run -p 8000:7860 -e LLM_API_KEY=your_groq_key ghcr.io/chandukasya/ai-document-qa:latest
+```
+
+Then open http://localhost:8000. The image works on Intel/AMD computers and Apple Silicon Macs.
 
 ## Features
 
@@ -95,7 +106,30 @@ These are the choices that shaped the project, and what each one trades away.
 
 ## Run it locally
 
-Requires Python 3.11 or newer and a free [Groq API key](https://console.groq.com/keys).
+You need a free [Groq API key](https://console.groq.com/keys) for any of these options.
+
+### Option 1: the published image (fastest)
+
+```bash
+docker run -p 8000:7860 -e LLM_API_KEY=your_groq_key ghcr.io/chandukasya/ai-document-qa:latest
+```
+
+### Option 2: build from source with Docker Compose
+
+```bash
+git clone https://github.com/chanduKasya/ai-document-qa.git
+cd ai-document-qa
+cp .env.example .env                 # then put your key after LLM_API_KEY=
+docker compose up --build
+```
+
+The first build takes several minutes, because it installs PyTorch and downloads the embedding model into the image. Later starts take seconds. Stop it with `Ctrl + C`.
+
+Either way, open http://localhost:8000.
+
+### Option 3: plain Python, for development
+
+Requires Python 3.11 or newer.
 
 ```bash
 python3 -m venv .venv
@@ -128,12 +162,12 @@ python -m pytest
 
 Free Spaces go to sleep when unused, so the first visit after a while takes a minute to wake up.
 
-The same `Dockerfile` runs on any Docker host:
+## Continuous integration
 
-```bash
-docker build -t document-qa .
-docker run -p 7860:7860 --env-file .env document-qa
-```
+Two GitHub Actions workflows run on every push and pull request:
+
+- **Tests** runs the pytest suite.
+- **Docker image** builds the container, starts it, and checks it end to end with the real embedding model: the health check, uploading the sample PDF, a question (which must fail cleanly, because CI has no Groq key), and the web page. On `main`, it then publishes the image to GitHub Container Registry for both `linux/amd64` and `linux/arm64`, tagged `latest` and with the commit hash.
 
 ## API
 
@@ -181,6 +215,8 @@ tests/             pytest tests (no internet or API key needed)
 scripts/           Builds the sample PDF
 learning/          The original step-by-step scripts this app grew from
 Dockerfile         Container for Hugging Face Spaces or any Docker host
+docker-compose.yml One-command local run
+.github/workflows/ Tests, and the Docker build, check and publish
 ```
 
 ## How the project grew

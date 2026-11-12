@@ -10,3 +10,5 @@ data/
 learning/
 tests/
 scripts/
+docker-compose.yml
+README.md
