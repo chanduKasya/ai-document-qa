@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document Q&amp;A</title>
+  <meta name="description" content="Upload a PDF and ask questions. Every answer cites the pages it came from.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='6' y='3' width='20' height='26' rx='2' fill='%23ffffff' stroke='%232343C4' stroke-width='2'/%3E%3Crect x='10' y='12' width='12' height='4' fill='%23FFE45C'/%3E%3Cpath d='M10 9h12M10 20h12M10 24h8' stroke='%232343C4' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <h1>Document Q&amp;A</h1>
+      <p class="lead">Upload a PDF and ask it questions. Every answer cites the pages it came from, so you can check it.</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="doc-panel" aria-labelledby="doc-heading">
+      <h2 id="doc-heading">Your document</h2>
+
+      <input type="file" id="file-input" class="visually-hidden" accept="application/pdf,.pdf">
+      <div id="dropzone" class="dropzone">
+        <label for="file-input" class="dropzone-label">
+          <svg class="dropzone-icon" viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="6" y="3" width="20" height="26" rx="2"></rect>
+            <path d="M10 9h12M10 14h12M10 19h8"></path>
+          </svg>
+          <span class="dropzone-title">Drop a PDF here or <span class="link-text">choose a file</span></span>
+          <span class="dropzone-hint" id="limits-hint">Up to 10 MB and 100 pages. Text-based PDFs only.</span>
+        </label>
+      </div>
+
+      <p class="sample-line" id="sample-line">No PDF handy? <button type="button" class="text-button" id="sample-button">Try the sample handbook</button></p>
+
+      <div id="upload-status" class="upload-status" role="status" aria-live="polite" hidden></div>
+
+      <div id="doc-card" class="doc-card" hidden>
+        <p class="doc-name" id="doc-name"></p>
+        <p class="doc-meta" id="doc-meta"></p>
+        <button type="button" class="text-button" id="replace-doc">Use a different PDF</button>
+      </div>
+
+      <div id="suggestions" class="suggestions" hidden>
+        <h3>Questions to start with</h3>
+        <ul id="suggestion-list"></ul>
+      </div>
+    </aside>
+
+    <section class="chat" aria-labelledby="chat-heading">
+      <h2 id="chat-heading" class="visually-hidden">Questions and answers</h2>
+
+      <div id="conversation" class="conversation" role="log" aria-live="polite">
+        <ol class="steps" id="empty-state">
+          <li><strong>Upload a PDF.</strong> It is read, split into passages and indexed by meaning.</li>
+          <li><strong>Ask in plain words.</strong> The closest passages are found and sent to the AI.</li>
+          <li><strong>Check the pages.</strong> Click a highlighted page mark to see the exact passage behind it.</li>
+        </ol>
+      </div>
+
+      <form id="ask-form" class="composer" novalidate>
+        <label for="question" class="visually-hidden">Your question</label>
+        <textarea id="question" rows="1" maxlength="500" placeholder="Upload a PDF to start asking" disabled></textarea>
+        <div class="composer-row">
+          <span id="char-count" class="char-count" aria-live="polite"></span>
+          <button type="submit" id="ask-button" class="button" disabled>Ask</button>
+        </div>
+      </form>
+
+      <p class="privacy" id="privacy-note">Your PDF is kept in this server's memory, never written to disk, and forgotten after an hour without use. Each question and its matching passages are sent to Groq to write the answer.</p>
+    </section>
+  </main>
+</body>
+</html>

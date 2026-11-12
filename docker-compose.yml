@@ -1,0 +1,12 @@
+# Run the whole app with one command:
+#   cp .env.example .env      (then add your Groq key)
+#   docker compose up --build
+# Then open http://localhost:8000
+services:
+  app:
+    build: .
+    ports:
+      - "8000:7860"
+    env_file:
+      - .env
+    restart: unless-stopped

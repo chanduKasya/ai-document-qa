@@ -1,24 +1,23 @@
-#secrets
+# Secrets
 .env
 .env.*
 !.env.example
 
-#virtual environments
+# Virtual environments
 .venv/
+.venv-*/
 
-#python files made automatically 
+# Python files made automatically
 __pycache__/
 *.py[cod]
 .pytest_cache/
 
-
-#local data and reports
+# Local data and reports
 data/
 reports/
 
-#editor and mac files
+# Editor and Mac files
 *.swp
 .DS_Store
 .idea/
 .vscode/
-

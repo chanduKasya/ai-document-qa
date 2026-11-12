@@ -1,0 +1,96 @@
+name: Docker image
+
+# Builds the container and checks it really works with the real embedding model.
+# On the main branch it then publishes the image to GitHub Container Registry,
+# for both Intel/AMD computers and Apple Silicon Macs.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the image
+        run: docker build -t document-qa:test .
+
+      - name: Start the container
+        # No Groq key here, so we test everything except the AI's answer.
+        run: docker run -d --name document-qa -p 7860:7860 -e LLM_API_KEY= document-qa:test
+
+      - name: Wait until the server is ready
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:7860/api/health; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Upload the sample PDF (real PDF reading, chunking and embeddings)
+        run: |
+          response=$(curl -fsS -F "file=@static/sample-handbook.pdf;type=application/pdf" http://127.0.0.1:7860/api/documents)
+          echo "$response"
+          echo "$response" | python3 -c "import json, sys; d = json.load(sys.stdin); assert d['pages'] == 3 and d['chunks'] > 0, d"
+          echo "$response" | python3 -c "import json, sys; print(json.load(sys.stdin)['document_id'])" > document_id.txt
+
+      - name: Ask a question (search runs; the AI step must fail cleanly without a key)
+        run: |
+          status=$(curl -s -o answer.json -w "%{http_code}" \
+            -H "Content-Type: application/json" \
+            -d '{"question": "How many days of paid leave do employees get?"}' \
+            "http://127.0.0.1:7860/api/documents/$(cat document_id.txt)/ask")
+          cat answer.json
+          test "$status" = "502"
+          grep -q "not configured" answer.json
+
+      - name: Check the web page is served
+        run: curl -fsS http://127.0.0.1:7860/ | grep -q "Document Q&amp;A"
+
+      - name: Show container logs
+        if: always()
+        run: docker logs document-qa
+
+  publish:
+    needs: smoke-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image name in lowercase (required by the registry)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
